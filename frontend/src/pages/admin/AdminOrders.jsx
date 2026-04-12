@@ -1,12 +1,15 @@
-import React from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import { updateOrderStatus } from '../../features/order/orderSlice'
+import React, { useEffect } from 'react'
+import { useSelector } from 'react-redux'
+import useOrder from '../../hooks/useOrder'
 import OrderStatusBadge from '../../components/ui/OrderStatusBadge'
 
 
 const AdminOrders = () => {
-  const { orders } = useSelector((s) => s.order)
-  const dispatch = useDispatch()
+  const { orders, fetchAllOrdersHook, updateOrderStatusHook, orderLoading } = useOrder()
+
+  useEffect(() => {
+    fetchAllOrdersHook()
+  }, [])
 
   const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled']
 
@@ -38,7 +41,7 @@ const AdminOrders = () => {
                   <td style={{ padding: '14px' }}>
                     <select
                       value={order.status}
-                      onChange={(e) => dispatch(updateOrderStatus({ orderId: order._id, status: e.target.value }))}
+                      onChange={(e) => updateOrderStatusHook(order._id, e.target.value)}
                       style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', outline: 'none' }}
                     >
                       {statuses.map((s) => <option key={s} value={s} style={{ background: 'var(--bg-card)' }}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}

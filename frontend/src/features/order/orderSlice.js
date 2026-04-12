@@ -82,7 +82,7 @@ export const updateOrderStatusSlice = createAsyncThunk(
   }
 )
 
-export const cancleOrderSlice = createAsyncThunk(
+export const cancelOrderSlice = createAsyncThunk(
   "orders/cancel",
   async (id, thunkAPI) => {
     try {
@@ -98,7 +98,7 @@ const orderSlice = createSlice({
   name: "order",
   initialState,
   reducers: {
-    clearOrderError: () => {
+    clearOrderError: (state) => {
       state.error = null
     },
   },
@@ -193,6 +193,23 @@ const orderSlice = createSlice({
       state.order = action.payload.data
     })
     .addCase(updateOrderStatusSlice.rejected, (state, action) => {
+      state.orderLoading = false
+      state.error = action.payload
+    })
+
+    //cancelOrder
+    .addCase(cancelOrderSlice.pending, (state) => {
+      state.orderLoading = true
+      state.error = null
+    })
+    .addCase(cancelOrderSlice.fulfilled, (state, action) => {
+      state.orderLoading = false
+      state.order = action.payload.data
+      state.orders = state.orders.map(order => 
+        order._id === action.payload.data._id ? action.payload.data : order
+      )
+    })
+    .addCase(cancelOrderSlice.rejected, (state, action) => {
       state.orderLoading = false
       state.error = action.payload
     })

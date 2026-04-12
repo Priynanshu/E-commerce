@@ -1,6 +1,5 @@
 import { useDispatch, useSelector } from "react-redux"
-import { cancleOrderSlice, clearOrderError, createOrderSlice, fetchAllOrdersSlice, fetchMyOrdersSlice, fetchOrderByIdSlice } from "../features/order/orderSlice"
-import { updateCartItemSlice } from "../features/cart/cartSlice"
+import { cancelOrderSlice, clearOrderError, createOrderSlice, fetchAllOrdersSlice, fetchMyOrdersSlice, fetchOrderByIdSlice, updateOrderStatusSlice } from "../features/order/orderSlice"
 import { useEffect } from "react"
 
 const useOrder = () => {
@@ -9,7 +8,8 @@ const useOrder = () => {
 
     const createOrderHook = async (orderData) => {
         try {
-           return await dispatch(createOrderSlice(orderData))
+           const result = await dispatch(createOrderSlice(orderData))
+           return result.payload
         }catch(err) {
             throw err
         }
@@ -41,15 +41,15 @@ const useOrder = () => {
 
     const cancelOrderHook = async (id) => {
         try {
-            return await dispatch(cancleOrderSlice(id))
+            return await dispatch(cancelOrderSlice(id))
         }catch(err) {
             throw err
         }
     }
 
-    const updateOrderStatusHook = async (id, status) => {
+    const updateOrderStatusHook = async (orderId, status) => {
         try {
-            return await dispatch(updateCartItemSlice({id, status}))
+            return await dispatch(updateOrderStatusSlice({orderId, status}))
         }catch(err) {
             throw err
         }

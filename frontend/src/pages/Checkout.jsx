@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
-import { addOrder } from '../features/order/orderSlice'
-import { selectAddress, addAddress } from '../features/address/addressSlice'
 import { setPaymentMethod } from '../features/payment/paymentSlice'
 import useCart from '../hooks/useCart'
+import useOrder from '../hooks/useOrder'
+import useAddress from '../hooks/useAddress'
 
 const paymentMethods = [
   { value: 'card', label: 'Credit / Debit Card', icon: '💳' },
@@ -16,7 +16,10 @@ const Checkout = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
+  const {addAddressHook} = useAddress()
+
   const { cartItems, totalPrice, clearCartHook } = useCart()
+  const { createOrderHook, orderLoading } = useOrder()
   const { addresses, selectedAddressId } = useSelector((s) => s.address)
   const { selectedMethod } = useSelector((s) => s.payment)
   const [step, setStep] = useState(1) // 1=Address, 2=Payment, 3=Review
@@ -32,26 +35,29 @@ const Checkout = () => {
   const handleAddAddress = () => {
     if (!newAddr.street || !newAddr.city) return
     const addr = { ...newAddr, _id: 'a' + Date.now(), user: 'u1', pinCode: Number(newAddr.pinCode), phone: Number(newAddr.phone) }
-    dispatch(addAddress(addr))
+    dispatch(addAddressHook(addr))
     dispatch(selectAddress(addr._id))
     setAddingAddr(false)
     setNewAddr({ street: '', city: '', state: '', pinCode: '', phone: '' })
   }
 
-  const handlePlaceOrder = () => {
-    const order = {
-      _id: 'o' + Date.now(),
-      user: 'u1',
-      cart: cartItems,
-      totalAmount: total,
-      address: selectedAddr,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
+  const handlePlaceOrder = async () => {
+    try {
+      const orderData = {
+        address: selectedAddressId,
+        fromCart: true,
+        paymentMethod: selectedMethod || 'cod'
+      }
+      
+      const res = await createOrderHook(orderData)
+      if (res.success) {
+        clearCartHook()
+        setPlaced(true)
+        setTimeout(() => navigate('/orders'), 2500)
+      }
+    } catch (error) {
+      console.error("Order placement failed:", error)
     }
-    dispatch(addOrder(order))
-    clearCartHook()
-    setPlaced(true)
-    setTimeout(() => navigate('/orders'), 2500)
   }
 
   if (placed) return (
@@ -175,14 +181,14 @@ const Checkout = () => {
               <div className="glass-card animate-fadeIn" style={{ padding: 24 }}>
                 <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Review Your Order</h3>
                 <div style={{ marginBottom: 20 }}>
-                  {items.map((item) => (
-                    <div key={item.product._id} style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
-                      <img src={item.product.images[0]} alt="" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8 }} />
+                  {cartItems.map((item, idx) => (
+                    <div key={item.product?._id || idx} style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
+                      <img src={item.product?.images?.[0] || 'https://via.placeholder.com/56'} alt="" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8 }} />
                       <div style={{ flex: 1 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.product.name}</p>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.product?.name || 'Unknown Product'}</p>
                         <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Qty: {item.quantity}</p>
                       </div>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>${(item.product.price * item.quantity).toFixed(2)}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>${((item.product?.price || 0) * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>

@@ -5,6 +5,7 @@ import useCart from '../hooks/useCart'
 
 const Cart = () => {
   const {cartItems, totalPrice, getCartHook, clearCartHook} = useCart()
+  const navigate = useNavigate()
 
   useEffect(() => {
     getCartHook()

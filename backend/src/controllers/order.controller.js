@@ -57,7 +57,6 @@ const createOrder = async (req, res, next) => {
             user: userId,
             items: validatedItems,
             totalAmount: totalPrice,
-            totalRevenue: totalRevenue,
             address,
             status: "pending",
         });

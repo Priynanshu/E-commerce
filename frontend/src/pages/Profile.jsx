@@ -1,16 +1,18 @@
 import React, { useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-
-import { addAddress, deleteAddress } from '../features/address/addressSlice'
 import { useNavigate } from 'react-router-dom'
+import useAddress from '../hooks/useAddress'
+import useWishlist from '../hooks/useWishlist'
 
 const Profile = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const {addAddressHook, deleteAddressHook} = useAddress()
   const { user } = useSelector((s) => s.auth)
   const { addresses } = useSelector((s) => s.address)
   const orders = useSelector((s) => s.order.orders)
-  const wishlistCount = useSelector((s) => s.wishlist.products.length)
+  const {wishlistProducts} = useWishlist()
+    const wishlistCount = wishlistProducts.length
   const [activeTab, setActiveTab] = useState('profile')
   const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '' })
   const [addingAddr, setAddingAddr] = useState(false)
@@ -21,7 +23,7 @@ const Profile = () => {
 
   const handleAddAddress = () => {
     if (!newAddr.street || !newAddr.city) return
-    dispatch(addAddress({ ...newAddr, _id: 'a' + Date.now(), user: 'u1', pinCode: Number(newAddr.pinCode), phone: Number(newAddr.phone) }))
+    dispatch(addAddressHook({ ...newAddr, _id: 'a' + Date.now(), user: 'u1', pinCode: Number(newAddr.pinCode), phone: Number(newAddr.phone) }))
     setAddingAddr(false)
     setNewAddr({ street: '', city: '', state: '', pinCode: '', phone: '' })
   }
@@ -95,7 +97,7 @@ const Profile = () => {
                     <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{addr.city}, {addr.state} — {addr.pinCode}</p>
                     <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>📞 {addr.phone}</p>
                   </div>
-                  <button onClick={() => dispatch(deleteAddress(addr._id))} style={{ padding: '6px 12px', borderRadius: 8, fontSize: 11, color: '#ff6584', background: 'rgba(255,101,132,0.1)', border: '1px solid rgba(255,101,132,0.3)', cursor: 'pointer' }}>
+                  <button onClick={() => dispatch(deleteAddressHook(addr._id))} style={{ padding: '6px 12px', borderRadius: 8, fontSize: 11, color: '#ff6584', background: 'rgba(255,101,132,0.1)', border: '1px solid rgba(255,101,132,0.3)', cursor: 'pointer' }}>
                     Remove
                   </button>
                 </div>

@@ -1,12 +1,16 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
-import { cancelOrder } from '../features/order/orderSlice'
+import { useSelector } from 'react-redux'
+import useOrder from '../hooks/useOrder'
 import OrderStatusBadge from '../components/ui/OrderStatusBadge'
+import { useEffect } from 'react'
 
 const Orders = () => {
-  const { orders } = useSelector((s) => s.order)
-  const dispatch = useDispatch()
+  const { orders, fetchMyOrdersHook, cancelOrderHook, orderLoading } = useOrder()
+
+  useEffect(() => {
+    fetchMyOrdersHook()
+  }, [])
 
   if (!orders.length) return (
     <div style={{ paddingTop: 68, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
@@ -38,11 +42,11 @@ const Orders = () => {
 
               {/* Items */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 14, overflowX: 'auto', paddingBottom: 4 }}>
-                {order.items.map((item) => (
-                  <div key={item.product._id} style={{ display: 'flex', gap: 10, alignItems: 'center', background: 'var(--bg-secondary)', borderRadius: 10, padding: '8px 12px', flexShrink: 0 }}>
-                    <img src={item.product.images[0]} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} />
+                {order.items.map((item, idx) => (
+                  <div key={item.product?._id || idx} style={{ display: 'flex', gap: 10, alignItems: 'center', background: 'var(--bg-secondary)', borderRadius: 10, padding: '8px 12px', flexShrink: 0 }}>
+                    <img src={item.product?.images?.[0] || 'https://via.placeholder.com/40'} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6 }} />
                     <div>
-                      <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.product.name}</p>
+                      <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.product?.name || 'Deleted Product'}</p>
                       <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>Qty: {item.quantity}</p>
                     </div>
                   </div>
@@ -59,7 +63,7 @@ const Orders = () => {
                   </Link>
                   {(order.status === 'pending' || order.status === 'processing') && (
                     <button
-                      onClick={() => dispatch(cancelOrder(order._id))}
+                      onClick={() => cancelOrderHook(order._id)}
                       style={{ padding: '8px 16px', borderRadius: 8, fontSize: 12, background: 'rgba(255,101,132,0.1)', border: '1px solid rgba(255,101,132,0.4)', color: '#ff6584', cursor: 'pointer', transition: 'all 0.2s' }}
                       onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,101,132,0.2)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,101,132,0.1)'}
