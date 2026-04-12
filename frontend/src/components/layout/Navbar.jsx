@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import useWishlist from '../../hooks/useWishlist'
 import useCart from '../../hooks/useCart'
+import { logoutSlice } from '../../features/auth/authSlice'
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false)
@@ -40,8 +41,8 @@ const Navbar = () => {
   }, [location.pathname])
 
   const handleLogout = () => {
-    // dispatch(logoutSuccess())
-    navigate('/')
+    dispatch(logoutSlice())
+    navigate('/login')
   }
 
   const navLinks = [

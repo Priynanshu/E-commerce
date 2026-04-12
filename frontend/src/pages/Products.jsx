@@ -13,6 +13,10 @@ const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState('default')
+  
+  useEffect(() => {
+    fetchAllProductsHook()
+  }, [fetchAllProductsHook])
 
   // Dynamic Categories list based on products
   const categories = useMemo(() => {

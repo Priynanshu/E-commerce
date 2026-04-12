@@ -7,7 +7,7 @@ import { useEffect } from "react";
 const useAuth = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { user, isAuthenticated, loading, error } = useSelector((state) => state.auth);
+    const { user, isAuthenticated, loading, error, allUsers } = useSelector((state) => state.auth);
 
     const registerHook = async (userData) => {
         try {
@@ -51,6 +51,7 @@ const useAuth = () => {
         clearAuthError,
         registerHook,
         loginHook,
+        allUsers,
         logoutHook
     };
 };

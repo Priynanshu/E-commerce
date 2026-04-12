@@ -22,8 +22,8 @@ const useWishlist = () => {
         }  
     }
 
-    const getWishlistHook = useCallback(async (productId) => {
-            await dispatch(getWishlistSlice(productId));
+    const getWishlistHook = useCallback(async () => {
+            await dispatch(getWishlistSlice());
     }, [dispatch]);
 
    

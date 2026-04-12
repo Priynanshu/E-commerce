@@ -39,7 +39,7 @@ const getAddresses = async (req, res, next) => {
     } catch (err) {
         next(err);
     }
-};
+}; 
 
 const updateAddress = async (req, res, next) => {
     try {

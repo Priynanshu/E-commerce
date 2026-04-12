@@ -14,7 +14,7 @@ const useProduct = (id = null) => { // Optional ID parameter add kiya
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
-    const { products, product, productLoading, error } = useSelector((state) => state.product)
+    const { products, product, productLoading, error, totalProducts } = useSelector((state) => state.product)
 
     // 1. Fetch All Products
     const fetchAllProductsHook = async () => {
@@ -72,6 +72,7 @@ const useProduct = (id = null) => { // Optional ID parameter add kiya
         fetchProductByIdHook,
         products,
         product,
+        totalProducts,
         productLoading,
         error
     }

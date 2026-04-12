@@ -156,9 +156,28 @@ const logout = async (req, res, next) => {
     }
 }
 
+const getAllUsers = async (req, res, next) => {
+    const users = await userModel.find()
+    if(users.length <= 0) {
+        return res.status(200).json({
+            success: true,
+            message: "No users found",
+            users: []
+        })
+    }
+    return res.status(200).json({
+        success: true,
+        message: "Users fetched successfully",
+        users: users,
+        totalUsers: users.length-1
+    })
+
+}
+
 module.exports = {
     register,
     login,
     getMe,
-    logout
+    logout,
+    getAllUsers
 }

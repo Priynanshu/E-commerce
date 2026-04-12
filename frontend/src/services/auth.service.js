@@ -27,6 +27,15 @@ const logoutService = async () => {
     }
 }
 
+const getAllUsersService = async () => {
+    try {
+        const response = await api.get("/auth/users")
+        return response.data;
+    }catch(error) {
+        throw error
+    }
+}
+
 const getMeService = async () => {
     try {
         const response = await api.get('/auth/me');
@@ -41,6 +50,7 @@ const authService = {
     registerService,
     logoutService,
     getMeService,
+    getAllUsersService
 }
 
 export default authService

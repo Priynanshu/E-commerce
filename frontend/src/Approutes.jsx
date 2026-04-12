@@ -19,16 +19,22 @@ import Profile from './pages/Profile'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminProducts from './pages/admin/AdminProducts'
 import AdminOrders from './pages/admin/AdminOrders'
+import AddProduct from './pages/admin/AddProduct'
+import EditProduct from './pages/admin/EditProduct'
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated } = useSelector((s) => s.auth)
+  const { isAuthenticated, loading } = useSelector((s) => s.auth)
+  
+  if (loading) return <div style={{ paddingTop: 100, textAlign: 'center' }}>Verifying Session...</div>
+  
   return isAuthenticated ? children : <Navigate to="/login" replace />
 }
 
 // Admin Route wrapper
 const AdminRoute = ({ children }) => {
-  const { isAuthenticated, user } = useSelector((s) => s.auth)
+  const { isAuthenticated, user, loading } = useSelector((s) => s.auth)
+  if (loading) return <div style={{ paddingTop: 100, textAlign: 'center' }}>Verifying Admin Access...</div>
   if (!isAuthenticated) return <Navigate to="/login" replace />
   if (user?.role !== 'admin') return <Navigate to="/" replace />
   return children
@@ -55,6 +61,8 @@ const AppRoutes = () => {
       {/* Admin Routes */}
       <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
       <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
+      <Route path="/admin/products/add" element={<AdminRoute><AddProduct /></AdminRoute>} />
+      <Route path="/admin/products/edit/:id" element={<AdminRoute><EditProduct /></AdminRoute>} />
       <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
 
       {/* Fallback */}

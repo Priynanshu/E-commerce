@@ -55,10 +55,11 @@ const addToCart = async (req, res, next) => {
                 cart.items.push({ product: productId, quantity });
             }
 
-            // ✅ totalPrice fresh calculate karo
             cart.totalPrice = await calculateTotalPrice(cart.items);
             await cart.save();
         }
+
+        await cart.populate("items.product");
 
         return res.status(200).json({
             success: true,
@@ -114,9 +115,9 @@ const removeFromCart = async (req, res, next) => {
 
         cart.items.splice(itemIndex, 1);
 
-        // ✅ Fresh recalculate karo
         cart.totalPrice = await calculateTotalPrice(cart.items);
         await cart.save();
+        await cart.populate("items.product");
 
         return res.status(200).json({
             success: true,
@@ -160,9 +161,10 @@ const updateCartItem = async (req, res, next) => {
             throw new AppError(404, "Product not found in cart");
         }
 
-        cart.items[itemIndex].quantity = quantity; // ✅ quantity set karo
+        cart.items[itemIndex].quantity = quantity; 
         cart.totalPrice = await calculateTotalPrice(cart.items);
         await cart.save();
+        await cart.populate("items.product");
 
         return res.status(200).json({
             success: true,

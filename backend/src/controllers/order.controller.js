@@ -45,7 +45,7 @@ const createOrder = async (req, res, next) => {
             }
 
             totalPrice += product.price * item.quantity;
-
+           
             validatedItems.push({
                 product: product._id,
                 quantity: item.quantity,
@@ -57,6 +57,7 @@ const createOrder = async (req, res, next) => {
             user: userId,
             items: validatedItems,
             totalAmount: totalPrice,
+            totalRevenue: totalRevenue,
             address,
             status: "pending",
         });
@@ -82,6 +83,7 @@ const createOrder = async (req, res, next) => {
             data: order,
         });
     } catch (err) {
+        console.log(err)
         next(err);
     }
 };
@@ -98,7 +100,8 @@ const getOrders = async (req, res, next) => {
         return res.status(200).json({
             success: true,
             message: "Orders fetched successfully",
-            data: orders
+            data: orders,
+            totalOrders: orders.length
         });
     } catch (err) {
         next(err);
@@ -114,10 +117,14 @@ const getAllOrders = async (req, res, next) => {
             .populate("address")
             .sort({ createdAt: -1 });
 
+            const totalRevenue = orders.reduce((acc, order) => acc + (order.totalAmount || 0), 0);
+
         return res.status(200).json({
             success: true,
             message: "All orders fetched successfully",
-            data: orders
+            data: orders,
+            totalRevenue,
+            totalOrders: orders.length
         });
     } catch (err) {
         next(err);
@@ -160,7 +167,8 @@ const getOrderHistory = async (req, res, next) => {
         return res.status(200).json({
             success: true,
             message: "Order history fetched successfully",
-            data: orders
+            data: orders,
+            totalOrders: orders.length
         });
     } catch (err) {
         next(err);

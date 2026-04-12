@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addToCartSlice, clearCartError, clearCartSlice, getCartSlice, removeFromCartSlice, updateCartItemSlice } from "../features/cart/cartSlice";
 
@@ -6,48 +6,52 @@ const useCart = () => {
     const dispatch = useDispatch();
     const { cartItems, cartCount, loading, error, totalPrice } = useSelector((state) => state.cart);
 
-    const addToCartHook = async (productId, quantity) => {
+    const addToCartHook = useCallback(async (productId, quantity = 1) => {
         try {
-            return await dispatch(addToCartSlice({ productId, quantity }));
+            const id = typeof productId === 'object' ? productId._id : productId;
+            return await dispatch(addToCartSlice({ productId: id, quantity }));
         } catch (err) {
             throw err;
         }
-    };
+    }, [dispatch]);
 
-    const removeFromCartHook = async (productId) => {
+    const removeFromCartHook = useCallback(async (productId) => {
         try {
             return await dispatch(removeFromCartSlice(productId));
         } catch (err) {
             throw err;
         }
-    };
+    }, [dispatch]);
 
-    const updateCartItemHook = async (productId, quantity) => {
+    const updateCartItemHook = useCallback(async (productId, quantity) => {
         try {
+            if (typeof productId === 'object' && !quantity) {
+                 return await dispatch(updateCartItemSlice(productId));
+            }
             return await dispatch(updateCartItemSlice({ productId, quantity }));
         } catch (err) {
             throw err;
         }
-    };
+    }, [dispatch]);
 
-    const clearCartHook = async () => {
+    const clearCartHook = useCallback(async () => {
         try {
             return await dispatch(clearCartSlice());
         } catch (err) {
             throw err;
         }
-    };
+    }, [dispatch]);
 
-    const getCartHook = async () => {
+    const getCartHook = useCallback(async () => {
         try {
             await dispatch(getCartSlice());
         } catch (err) {
             throw err;
         }
-    };
+    }, [dispatch]);
 
     useEffect(() => {
-        clearCartError();
+        dispatch(clearCartError());
     }, [dispatch]);
 
     return {

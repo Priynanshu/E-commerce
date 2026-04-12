@@ -18,7 +18,8 @@ const addToWishlist = async (req, res, next) => {
         if (!wishlist) {
             wishlist = await wishlistModel.create({ user: userId, products: [productId] });
         } else {
-            if (wishlist.products.includes(productId)) {
+            const productExists = wishlist.products.some(id => id.toString() === productId);
+            if (productExists) {
                 throw new AppError("Product already in wishlist", 400);
             }
             wishlist.products.push(productId);
@@ -31,7 +32,7 @@ const addToWishlist = async (req, res, next) => {
         return res.status(200).json({
             success: true,
             message: "Product added to wishlist",
-            data: [...wishlist.products], // ✅ sirf products array
+            data: wishlist.products, 
             count: wishlist.products.length
         });
     } catch(err) {
@@ -70,7 +71,7 @@ const removeFromWishlist = async (req, res, next) => {
         if (!wishlist) {
             throw new AppError("Wishlist not found", 404);
         }
-        const productIndex = wishlist.products.indexOf(productId);
+        const productIndex = wishlist.products.findIndex(id => id.toString() === productId);
         if (productIndex === -1) {
             throw new AppError("Product not in wishlist", 400);
         }
@@ -80,7 +81,7 @@ const removeFromWishlist = async (req, res, next) => {
         return res.status(200).json({
             success: true,
             message: "Product removed from wishlist",
-            data: [...wishlist.products], 
+            data: wishlist.products, 
             count: wishlist.products.length
         });
     } catch (err) {

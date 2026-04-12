@@ -3,14 +3,30 @@ import AppRoutes from './Approutes'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 import { useDispatch } from 'react-redux'
-import { getMeSlice } from './features/auth/authSlice'
+import { getAllUsersSlice, getMeSlice } from './features/auth/authSlice'
+import { getCartSlice } from './features/cart/cartSlice'
+import { getWishlistSlice } from './features/wishlist/wishlistSlice'
+import { useSelector } from 'react-redux'
 
 const App = () => {
   const dispatch = useDispatch()
+  const { isAuthenticated } = useSelector(state => state.auth)
 
   useEffect(() => {
     dispatch(getMeSlice())
   }, [dispatch])
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(getCartSlice())
+      dispatch(getWishlistSlice())
+    }
+  }, [isAuthenticated, dispatch])
+
+  useEffect(() => {
+    dispatch(getAllUsersSlice())
+  }, [dispatch])
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <Navbar />

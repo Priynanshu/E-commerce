@@ -3,16 +3,21 @@ import { Link } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { adminStats } from '../../data/dummy'
 import OrderStatusBadge from '../../components/ui/OrderStatusBadge'
+import useAuth from '../../hooks/useAuth'
+import useProduct from '../../hooks/useProduct'
 
 const AdminDashboard = () => {
   const orders = useSelector((s) => s.order.orders)
   const revenue = orders.reduce((s, o) => s + o.totalAmount, 0)
 
+  const {allUsers} = useAuth()
+  const {totalProducts} = useProduct()
+
   const stats = [
     { label: 'Total Revenue', value: `$${revenue.toFixed(2)}`, icon: '💰', color: '#10b981', delta: '+12.4%' },
     { label: 'Total Orders', value: orders.length, icon: '📦', color: 'var(--accent)', delta: '+8.1%' },
-    { label: 'Total Users', value: adminStats.totalUsers.toLocaleString(), icon: '👥', color: '#3b82f6', delta: '+5.3%' },
-    { label: 'Products', value: adminStats.totalProducts, icon: '🏷️', color: '#f59e0b', delta: 'Active' },
+    { label: 'Total Users', value: allUsers, icon: '👥', color: '#3b82f6', delta: '+5.3%' },
+    { label: 'Products', value: totalProducts, icon: '🏷️', color: '#f59e0b', delta: 'Active' },
   ]
 
   return (

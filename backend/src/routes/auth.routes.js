@@ -9,5 +9,6 @@ router.post("/register", upload.single("profileImage"), authController.register)
 router.post("/login", authMiddleware.loginRateLimiter, authController.login)
 router.get("/me", authMiddleware.identifyUser, authController.getMe)
 router.post("/logout", authMiddleware.identifyUser, authController.logout)
+router.get("/users", authMiddleware.identifyUser, authMiddleware.isAdmin, authController.getAllUsers)
 
 module.exports = router

@@ -4,7 +4,7 @@ import useReview from '../../hooks/useReview';
 
 const Review = ({ productId }) => {
   const { reviews, reviewLoading, error, createReviewHook, getReviewHook } = useReview();
-  console.log(reviews)
+  
   const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 

@@ -4,6 +4,7 @@ import authService from "../../services/auth.service";
 
 let initialState = {
     user: null,
+    allUsers: 0,
     isAuthenticated: false,
     loading: false,
     error: null,
@@ -38,6 +39,18 @@ export const getMeSlice = createAsyncThunk(
   async (_, thunkAPI) => {
     try{
       const response = await authService.getMeService();
+      return response;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error.response.data);
+    }
+  }
+);
+
+export const getAllUsersSlice = createAsyncThunk(
+  "auth/users",
+  async (_, thunkAPI) => {
+    try{
+      const response = await authService.getAllUsersService();
       return response;
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response.data);
@@ -127,6 +140,23 @@ const authSlice = createSlice({
       state.loading = false
       state.isAuthenticated = false;
       state.error = action.payload.message || "Get Profile Failed"
+    })
+
+    //getAllUsers
+    .addCase(getAllUsersSlice.pending, (state) => {
+      state.loading = true
+      state.error = null
+    })
+    .addCase(getAllUsersSlice.fulfilled, (state, action) => {
+      state.loading = false
+      state.allUsers = action.payload.totalUsers || action.payload;
+      state.error = null
+    })
+    .addCase(getAllUsersSlice.rejected, (state, action) => {
+      state.loading = false
+      state.isAuthenticated = false;
+      state.allUsers = 0;
+      state.error = action.payload.message || "Get All Users Failed"
     })
   }
 })

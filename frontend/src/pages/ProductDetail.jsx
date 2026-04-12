@@ -18,7 +18,7 @@ const ProductDetail = () => {
   
   const wishlistItems = useSelector((state) => state.wishlist.wishlistProducts)
   const isWishlisted = wishlistItems?.some((item) => item._id === product?._id) || false
-  console.log(wishlistProducts)
+ 
   const handleWishlistToggle = async () => {
     if (isWishlisted) {
       await removeFromWishlistHook(product._id)  

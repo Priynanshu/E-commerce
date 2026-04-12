@@ -4,6 +4,7 @@ import productService from "../../services/product.service";
 let initialState = {
   products: [],
   product: null,
+  totalProducts: 0,
   productLoading: false,
   error: null,
 };
@@ -95,10 +96,12 @@ const productSlice = createSlice({
         state.productLoading = false;
         // Backend se agar { products: [] } aa raha hai toh action.payload.products
         state.products = action.payload.products || action.payload;
+        state.totalProducts = action.payload.count || action.payload.length || 0;
       })
       .addCase(fetchAllProducts.rejected, (state, action) => {
         state.productLoading = false;
         state.error = action.payload;
+        state.totalProducts = 0;
       })
 
       // 2. Fetch Product By ID
