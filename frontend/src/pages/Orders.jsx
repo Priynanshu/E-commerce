@@ -10,7 +10,7 @@ const Orders = () => {
 
   useEffect(() => {
     fetchMyOrdersHook()
-  }, [])
+  }, [fetchMyOrdersHook])
 
   if (!orders.length) return (
     <div style={{ paddingTop: 68, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
@@ -53,23 +53,35 @@ const Orders = () => {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)' }}>
-                  Total: ${order.totalAmount.toFixed(2)}
-                </span>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Link to={`/orders/${order._id}`}>
-                    <button className="btn-secondary" style={{ padding: '8px 16px', borderRadius: 8, fontSize: 12 }}>View Details</button>
-                  </Link>
-                  {(order.status === 'pending' || order.status === 'processing') && (
-                    <button
-                      onClick={() => cancelOrderHook(order._id)}
-                      style={{ padding: '8px 16px', borderRadius: 8, fontSize: 12, background: 'rgba(255,101,132,0.1)', border: '1px solid rgba(255,101,132,0.4)', color: '#ff6584', cursor: 'pointer', transition: 'all 0.2s' }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,101,132,0.2)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,101,132,0.1)'}
-                    >Cancel</button>
-                  )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, padding: '12px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: 12, marginBottom: 14 }}>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <div>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 2 }}>Payment</p>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{order.paymentMethod?.toUpperCase() || 'COD'}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 2 }}>Deliver to</p>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>{order.address?.city || 'Address info'}</p>
+                  </div>
                 </div>
+                <div style={{ textAlign: 'right' }}>
+                  <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 2 }}>Total Amount</p>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--accent)' }}>₹{order.totalAmount.toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <Link to={`/orders/${order._id}`}>
+                  <button className="btn-secondary" style={{ padding: '8px 16px', borderRadius: 8, fontSize: 12 }}>View Details</button>
+                </Link>
+                {(order.status === 'pending' || order.status === 'processing') && (
+                  <button
+                    onClick={() => cancelOrderHook(order._id)}
+                    style={{ padding: '8px 16px', borderRadius: 8, fontSize: 12, background: 'rgba(255,101,132,0.1)', border: '1px solid rgba(255,101,132,0.4)', color: '#ff6584', cursor: 'pointer', transition: 'all 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,101,132,0.2)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,101,132,0.1)'}
+                  >Cancel</button>
+                )}
               </div>
             </div>
           ))}

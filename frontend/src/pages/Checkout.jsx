@@ -1,10 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { setPaymentMethod } from '../features/payment/paymentSlice'
+import { selectAddress } from '../features/address/addressSlice'
 import useCart from '../hooks/useCart'
 import useOrder from '../hooks/useOrder'
 import useAddress from '../hooks/useAddress'
+import usePayment from '../hooks/usePayment'
 
 const paymentMethods = [
   { value: 'card', label: 'Credit / Debit Card', icon: '💳' },
@@ -16,55 +18,67 @@ const Checkout = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
 
-  const {addAddressHook} = useAddress()
-
+  const {fetchAddressHook, addresses, selectedAddressId, addressLoading} = useAddress()
   const { cartItems, totalPrice, clearCartHook } = useCart()
   const { createOrderHook, orderLoading } = useOrder()
-  const { addresses, selectedAddressId } = useSelector((s) => s.address)
-  const { selectedMethod } = useSelector((s) => s.payment)
-  const [step, setStep] = useState(1) // 1=Address, 2=Payment, 3=Review
-  const [addingAddr, setAddingAddr] = useState(false)
-  const [newAddr, setNewAddr] = useState({ street: '', city: '', state: '', pinCode: '', phone: '' })
-  const [placed, setPlaced] = useState(false)
+  const { 
+    selectedMethod, 
+    createPaymentHook, 
+    processPaymentHook, 
+    paymentLoading 
+  } = usePayment()
+  const { user } = useSelector((s) => s.auth)
 
-  const shipping = totalPrice >= 50 ? 0 : 9.99
-  const tax = totalPrice * 0.08
+  const [step, setStep] = useState(1) // 1=Address, 2=Payment, 3=Review
+  const [placed, setPlaced] = useState(false)
+  const [paymentStep, setPaymentStep] = useState('') // '', 'creating', 'processing'
+
+  useEffect(() => {
+    fetchAddressHook()
+  }, [fetchAddressHook])
+
+  const shipping = totalPrice >= 500 ? 0 : 50
+  const tax = totalPrice * 0.12 // GST 12%
   const total = totalPrice + shipping + tax
   const selectedAddr = addresses.find((a) => a._id === selectedAddressId)
 
-  const handleAddAddress = () => {
-    if (!newAddr.street || !newAddr.city) return
-    const addr = { ...newAddr, _id: 'a' + Date.now(), user: 'u1', pinCode: Number(newAddr.pinCode), phone: Number(newAddr.phone) }
-    dispatch(addAddressHook(addr))
-    dispatch(selectAddress(addr._id))
-    setAddingAddr(false)
-    setNewAddr({ street: '', city: '', state: '', pinCode: '', phone: '' })
-  }
-
   const handlePlaceOrder = async () => {
     try {
+      setPaymentStep('creating')
       const orderData = {
         address: selectedAddressId,
         fromCart: true,
         paymentMethod: selectedMethod || 'cod'
       }
       
-      const res = await createOrderHook(orderData)
-      if (res.success) {
+      const orderRes = await createOrderHook(orderData)
+      
+      if (orderRes.success) {
+        // Create Payment record
+        const paymentRes = await createPaymentHook(orderRes.data._id, selectedMethod)
+        
+        if (paymentRes.success && selectedMethod !== 'cod') {
+          setPaymentStep('processing')
+          // Simulate Payment Processing for non-COD
+          await processPaymentHook(paymentRes.data._id, true)
+        }
+
         clearCartHook()
         setPlaced(true)
-        setTimeout(() => navigate('/orders'), 2500)
+        setTimeout(() => navigate('/orders'), 3000)
       }
     } catch (error) {
-      console.error("Order placement failed:", error)
+      console.error("Checkout failed:", error)
+      setPaymentStep('')
     }
   }
 
   if (placed) return (
     <div style={{ paddingTop: 68, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
       <div style={{ fontSize: 72, animation: 'fadeInUp 0.5s ease' }}>🎉</div>
-      <h2 style={{ fontSize: 28, fontWeight: 800 }}>Order Placed!</h2>
-      <p style={{ fontSize: 15, color: 'var(--text-muted)' }}>Redirecting to your orders...</p>
+      <h2 style={{ fontSize: 28, fontWeight: 800 }}>Order Successful!</h2>
+      <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>{selectedMethod === 'cod' ? 'Pay upon delivery.' : 'Payment received successfully.'}</p>
+      <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Redirecting to your orders...</p>
     </div>
   )
 
@@ -102,51 +116,47 @@ const Checkout = () => {
             {/* Step 1: Address */}
             {step === 1 && (
               <div className="glass-card animate-fadeIn" style={{ padding: 24 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Select Delivery Address</h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
-                  {addresses.map((addr) => (
-                    <div key={addr._id} onClick={() => dispatch(selectAddress(addr._id))} style={{
-                      padding: 16, borderRadius: 12,
-                      border: selectedAddressId === addr._id ? '2px solid var(--accent)' : '1px solid var(--border)',
-                      background: selectedAddressId === addr._id ? 'rgba(108,99,255,0.08)' : 'var(--bg-secondary)',
-                      cursor: 'pointer', transition: 'all 0.2s',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${selectedAddressId === addr._id ? 'var(--accent)' : 'var(--text-muted)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {selectedAddressId === addr._id && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} />}
-                        </div>
-                        <div>
-                          <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{addr.street}</p>
-                          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{addr.city}, {addr.state} - {addr.pinCode}</p>
-                          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>📞 {addr.phone}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700 }}>Select Delivery Address</h3>
+                    <Link to="/profile" style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600 }}>+ Manage in Profile</Link>
                 </div>
 
-                {addingAddr ? (
-                  <div style={{ border: '1px solid var(--border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                    <h4 style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>New Address</h4>
-                    {[
-                      { key: 'street', placeholder: 'Street Address', full: true },
-                      { key: 'city', placeholder: 'City' },
-                      { key: 'state', placeholder: 'State' },
-                      { key: 'pinCode', placeholder: 'PIN Code' },
-                      { key: 'phone', placeholder: 'Phone Number' },
-                    ].map((f) => (
-                      <input key={f.key} placeholder={f.placeholder} value={newAddr[f.key]} onChange={(e) => setNewAddr({ ...newAddr, [f.key]: e.target.value })} className="input-field" style={{ marginBottom: 10, fontSize: 13 }} />
-                    ))}
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <button onClick={handleAddAddress} className="btn-primary" style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13 }}>Save Address</button>
-                      <button onClick={() => setAddingAddr(false)} className="btn-secondary" style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13 }}>Cancel</button>
+                {addressLoading ? (
+                    <p style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-muted)' }}>Loading addresses...</p>
+                ) : addresses.length === 0 ? (
+                    <div style={{ padding: '30px 20px', textAlign: 'center', background: 'var(--bg-secondary)', borderRadius: 12, marginBottom: 20 }}>
+                        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 16 }}>No addresses found.</p>
+                        <Link to="/profile"><button className="btn-secondary" style={{ padding: '10px 20px', borderRadius: 8, fontSize: 13 }}>Add Address in Profile</button></Link>
                     </div>
-                  </div>
                 ) : (
-                  <button onClick={() => setAddingAddr(true)} className="btn-secondary" style={{ padding: '10px 16px', borderRadius: 8, fontSize: 13, marginBottom: 20 }}>+ Add New Address</button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+                    {addresses.map((addr) => (
+                        <div key={addr._id} onClick={() => dispatch(selectAddress(addr._id))} style={{
+                        padding: 16, borderRadius: 12,
+                        border: selectedAddressId === addr._id ? '2px solid var(--accent)' : '1px solid var(--border)',
+                        background: selectedAddressId === addr._id ? 'rgba(108,99,255,0.08)' : 'var(--bg-secondary)',
+                        cursor: 'pointer', transition: 'all 0.2s',
+                        }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${selectedAddressId === addr._id ? 'var(--accent)' : 'var(--text-muted)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {selectedAddressId === addr._id && <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} />}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{addr.street}</p>
+                            <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{addr.city}, {addr.state} - {addr.pinCode}</p>
+                            </div>
+                        </div>
+                        </div>
+                    ))}
+                    </div>
                 )}
 
-                <button onClick={() => setStep(2)} className="btn-primary" style={{ padding: '13px 28px', borderRadius: 10, fontSize: 14 }} disabled={!selectedAddressId}>
+                <button 
+                  onClick={() => setStep(2)} 
+                  className="btn-primary" 
+                  style={{ padding: '13px 28px', borderRadius: 10, fontSize: 14, width: '100%', opacity: !selectedAddressId ? 0.6 : 1 }} 
+                  disabled={!selectedAddressId}
+                >
                   Continue to Payment →
                 </button>
               </div>
@@ -179,7 +189,18 @@ const Checkout = () => {
             {/* Step 3: Review */}
             {step === 3 && (
               <div className="glass-card animate-fadeIn" style={{ padding: 24 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Review Your Order</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24, padding: 16, background: 'rgba(255,255,255,0.02)', borderRadius: 12 }}>
+                  <div>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>Shipping to</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{selectedAddr?.street}</p>
+                    <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{selectedAddr?.city}, {selectedAddr?.pinCode}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 4 }}>Payment Method</p>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{selectedMethod?.toUpperCase()}</p>
+                  </div>
+                </div>
+
                 <div style={{ marginBottom: 20 }}>
                   {cartItems.map((item, idx) => (
                     <div key={item.product?._id || idx} style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border)' }}>
@@ -188,13 +209,15 @@ const Checkout = () => {
                         <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>{item.product?.name || 'Unknown Product'}</p>
                         <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Qty: {item.quantity}</p>
                       </div>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>${((item.product?.price || 0) * item.quantity).toFixed(2)}</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>₹{((item.product?.price || 0) * item.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
-                  <button onClick={() => setStep(2)} className="btn-secondary" style={{ padding: '13px 20px', borderRadius: 10, fontSize: 14 }}>← Back</button>
-                  <button onClick={handlePlaceOrder} className="btn-primary" style={{ padding: '13px 28px', borderRadius: 10, fontSize: 14 }}>🎉 Place Order</button>
+                  <button onClick={() => setStep(2)} className="btn-secondary" style={{ padding: '13px 20px', borderRadius: 10, fontSize: 14 }} disabled={orderLoading || paymentLoading}>← Back</button>
+                  <button onClick={handlePlaceOrder} className="btn-primary" style={{ padding: '13px 28px', borderRadius: 10, fontSize: 14 }} disabled={orderLoading || paymentLoading}>
+                    {paymentStep === 'creating' ? 'Creating Order...' : paymentStep === 'processing' ? 'Processing Payment...' : '🎉 Place Order'}
+                  </button>
                 </div>
               </div>
             )}
@@ -214,13 +237,13 @@ const Checkout = () => {
             ))}
             {cartItems.length > 3 && <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 10 }}>+{cartItems.length - 3} more</p>}
             <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
-              {[['Subtotal', `$${totalPrice.toFixed(2)}`], ['Shipping', shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`], ['Tax', `$${tax.toFixed(2)}`]].map(([l, v]) => (
+              {[['Subtotal', `₹${totalPrice.toFixed(2)}`], ['Shipping', shipping === 0 ? 'Free' : `₹${shipping.toFixed(2)}`], ['Tax', `₹${tax.toFixed(2)}`]].map(([l, v]) => (
                 <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--text-secondary)', marginBottom: 6 }}>
                   <span>{l}</span><span>{v}</span>
                 </div>
               ))}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 800, paddingTop: 8, borderTop: '1px solid var(--border)', marginTop: 4 }}>
-                <span>Total</span><span style={{ color: 'var(--accent)' }}>${total.toFixed(2)}</span>
+                <span>Total</span><span style={{ color: 'var(--accent)' }}>₹{total.toFixed(2)}</span>
               </div>
             </div>
           </div>

@@ -10,22 +10,22 @@ import { useSelector } from 'react-redux'
 
 const App = () => {
   const dispatch = useDispatch()
-  const { isAuthenticated } = useSelector(state => state.auth)
+  const { isAuthenticated, user } = useSelector(state => state.auth)
 
   useEffect(() => {
     dispatch(getMeSlice())
   }, [dispatch])
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && user) {
       dispatch(getCartSlice())
       dispatch(getWishlistSlice())
+      
+      if (user.role === 'admin') {
+        dispatch(getAllUsersSlice())
+      }
     }
-  }, [isAuthenticated, dispatch])
-
-  useEffect(() => {
-    dispatch(getAllUsersSlice())
-  }, [dispatch])
+  }, [isAuthenticated, user?.role, dispatch])
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>

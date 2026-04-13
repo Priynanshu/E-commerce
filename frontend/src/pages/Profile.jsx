@@ -1,31 +1,68 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import useAddress from '../hooks/useAddress'
 import useWishlist from '../hooks/useWishlist'
+import useOrder from '../hooks/useOrder'
+import { logoutSlice } from '../features/auth/authSlice'
 
 const Profile = () => {
   const dispatch = useDispatch()
   const navigate = useNavigate()
-  const {addAddressHook, deleteAddressHook} = useAddress()
+  const {fetchAddressHook, addAddressHook, deleteAddressHook} = useAddress()
+  const {fetchMyOrdersHook} = useOrder()
   const { user } = useSelector((s) => s.auth)
   const { addresses } = useSelector((s) => s.address)
   const orders = useSelector((s) => s.order.orders)
   const {wishlistProducts} = useWishlist()
-    const wishlistCount = wishlistProducts.length
+  const wishlistCount = wishlistProducts.length
+  
   const [activeTab, setActiveTab] = useState('profile')
   const [form, setForm] = useState({ name: user?.name || '', email: user?.email || '' })
   const [addingAddr, setAddingAddr] = useState(false)
   const [newAddr, setNewAddr] = useState({ street: '', city: '', state: '', pinCode: '', phone: '' })
   const [saved, setSaved] = useState(false)
 
-  const handleSave = () => { setSaved(true); setTimeout(() => setSaved(false), 2500) }
+  useEffect(() => {
+    fetchAddressHook()
+    fetchMyOrdersHook()
+  }, [fetchAddressHook, fetchMyOrdersHook])
 
-  const handleAddAddress = () => {
+  const handleSave = () => { 
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500) 
+  }
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logoutSlice()).unwrap()
+      navigate('/login')
+    } catch (err) {
+      console.error("Logout failed:", err)
+    }
+  }
+
+  const handleAddAddress = async () => {
     if (!newAddr.street || !newAddr.city) return
-    dispatch(addAddressHook({ ...newAddr, _id: 'a' + Date.now(), user: 'u1', pinCode: Number(newAddr.pinCode), phone: Number(newAddr.phone) }))
-    setAddingAddr(false)
-    setNewAddr({ street: '', city: '', state: '', pinCode: '', phone: '' })
+    try {
+      await addAddressHook({ 
+        ...newAddr, 
+        pinCode: String(newAddr.pinCode), 
+        phone: String(newAddr.phone) 
+      })
+      setAddingAddr(false)
+      setNewAddr({ street: '', city: '', state: '', pinCode: '', phone: '' })
+    } catch (err) {
+      console.error("Failed to add address:", err)
+    }
+  }
+
+  const handleDeleteAddress = async (id) => {
+    try {
+      await deleteAddressHook(id)
+    } catch (err) {
+      console.error("Failed to delete address:", err)
+    }
   }
 
   const tabs = [
@@ -42,12 +79,26 @@ const Profile = () => {
           <img src={user?.profileImage} alt="Profile" style={{ width: 72, height: 72, borderRadius: '50%', border: '3px solid var(--accent)', objectFit: 'cover' }} />
           <div style={{ flex: 1 }}>
             <h1 style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>{user?.name}</h1>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>{user?.email}</p>
-            <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: user?.role === 'admin' ? 'rgba(245,158,11,0.15)' : 'rgba(108,99,255,0.15)', color: user?.role === 'admin' ? '#f59e0b' : 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              {user?.role}
-            </span>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12 }}>{user?.email}</p>
+            
+            <div style={{ display: 'flex', gap: 16 }}>
+                <div>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 2 }}>Orders</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{orders.length}</p>
+                </div>
+                <div>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 2 }}>Wishlist</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)' }}>{wishlistCount}</p>
+                </div>
+                <div>
+                    <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 2 }}>Spent</p>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>₹{orders.reduce((s,o) => s + (o.totalAmount || 0), 0).toFixed(0)}</p>
+                </div>
+            </div>
           </div>
-          <button style={{ padding: '10px 16px', borderRadius: 8, fontSize: 12, background: 'rgba(255,101,132,0.1)', border: '1px solid rgba(255,101,132,0.3)', color: '#ff6584', cursor: 'pointer' }}>
+          <button 
+            onClick={handleLogout}
+            style={{ padding: '10px 16px', borderRadius: 8, fontSize: 12, background: 'rgba(255,101,132,0.1)', border: '1px solid rgba(255,101,132,0.3)', color: '#ff6584', cursor: 'pointer' }}>
             Sign Out
           </button>
         </div>
@@ -64,6 +115,20 @@ const Profile = () => {
             </button>
           ))}
         </div>
+
+        {/* Latest Order Quick View */}
+        {orders.length > 0 && activeTab === 'profile' && (
+          <div className="glass-card animate-fadeIn" style={{ padding: '16px 20px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(108,99,255,0.1)' }}>
+            <div>
+              <p style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 2 }}>Latest Order</p>
+              <p style={{ fontSize: 13, fontWeight: 600 }}>#{orders[0]._id.toUpperCase().slice(-8)} — ₹{orders[0].totalAmount.toFixed(0)}</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>{new Date(orders[0].createdAt).toLocaleDateString()}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 10px', borderRadius: 6, background: 'rgba(10,10,20,0.3)', color: 'var(--accent)' }}>{orders[0].status.toUpperCase()}</span>
+            </div>
+          </div>
+        )}
 
         {/* Tab Content */}
         {activeTab === 'profile' && (
@@ -97,7 +162,7 @@ const Profile = () => {
                     <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>{addr.city}, {addr.state} — {addr.pinCode}</p>
                     <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>📞 {addr.phone}</p>
                   </div>
-                  <button onClick={() => dispatch(deleteAddressHook(addr._id))} style={{ padding: '6px 12px', borderRadius: 8, fontSize: 11, color: '#ff6584', background: 'rgba(255,101,132,0.1)', border: '1px solid rgba(255,101,132,0.3)', cursor: 'pointer' }}>
+                  <button onClick={() => handleDeleteAddress(addr._id)} style={{ padding: '6px 12px', borderRadius: 8, fontSize: 11, color: '#ff6584', background: 'rgba(255,101,132,0.1)', border: '1px solid rgba(255,101,132,0.3)', cursor: 'pointer' }}>
                     Remove
                   </button>
                 </div>
@@ -133,7 +198,7 @@ const Profile = () => {
               { label: 'Delivered', value: orders.filter((o) => o.status === 'delivered').length, icon: '✅', color: '#10b981' },
               { label: 'Pending', value: orders.filter((o) => o.status === 'pending').length, icon: '⏳', color: '#f59e0b' },
               { label: 'Cancelled', value: orders.filter((o) => o.status === 'cancelled').length, icon: '❌', color: '#ff6584' },
-              { label: 'Total Spent', value: `$${orders.reduce((s, o) => s + o.totalAmount, 0).toFixed(0)}`, icon: '💰', color: 'var(--accent3)' },
+              { label: 'Total Spent', value: `₹${orders.reduce((s, o) => s + o.totalAmount, 0).toFixed(0)}`, icon: '💰', color: 'var(--accent3)' },
               { label: 'Wishlisted', value: wishlistCount, icon: '💛', color: '#ff6584' },
             ].map((stat) => (
               <div key={stat.label} className="glass-card" style={{ padding: '24px 20px', textAlign: 'center', transition: 'transform 0.2s' }}

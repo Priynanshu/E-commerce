@@ -1,23 +1,28 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useSelector } from 'react-redux'
-import { adminStats } from '../../data/dummy'
+import { useSelector, useDispatch } from 'react-redux'
 import OrderStatusBadge from '../../components/ui/OrderStatusBadge'
-import useAuth from '../../hooks/useAuth'
+import useOrder from '../../hooks/useOrder'
+import { getAllUsersSlice } from '../../features/auth/authSlice'
 import useProduct from '../../hooks/useProduct'
 
 const AdminDashboard = () => {
-  const orders = useSelector((s) => s.order.orders)
-  const revenue = orders.reduce((s, o) => s + o.totalAmount, 0)
+  const dispatch = useDispatch()
+  const { orders, fetchAllOrdersHook, totalRevenue } = useOrder()
+  const { allUsers } = useSelector(s => s.auth)
+  const { products, fetchAllProductsHook } = useProduct()
 
-  const {allUsers} = useAuth()
-  const {totalProducts} = useProduct()
+  useEffect(() => {
+    fetchAllOrdersHook()
+    fetchAllProductsHook()
+    dispatch(getAllUsersSlice())
+  }, [fetchAllOrdersHook, fetchAllProductsHook, dispatch])
 
   const stats = [
-    { label: 'Total Revenue', value: `$${revenue.toFixed(2)}`, icon: '💰', color: '#10b981', delta: '+12.4%' },
-    { label: 'Total Orders', value: orders.length, icon: '📦', color: 'var(--accent)', delta: '+8.1%' },
-    { label: 'Total Users', value: allUsers, icon: '👥', color: '#3b82f6', delta: '+5.3%' },
-    { label: 'Products', value: totalProducts, icon: '🏷️', color: '#f59e0b', delta: 'Active' },
+    { label: 'Total Revenue', value: `₹${(totalRevenue || 0).toFixed(2)}`, icon: '💰', color: '#10b981', delta: 'Settled' },
+    { label: 'Total Orders', value: orders.length, icon: '📦', color: 'var(--accent)', delta: 'Managed' },
+    { label: 'Total Users', value: allUsers, icon: '👥', color: '#3b82f6', delta: 'Active' },
+    { label: 'Products', value: products.length, icon: '🏷️', color: '#f59e0b', delta: 'In Stock' },
   ]
 
   return (
@@ -84,7 +89,7 @@ const AdminDashboard = () => {
                   <tr key={order._id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '12px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace' }}>#{order._id.toUpperCase().slice(-6)}</td>
                     <td style={{ padding: '12px', fontSize: 12, color: 'var(--text-secondary)' }}>{new Date(order.createdAt).toLocaleDateString()}</td>
-                    <td style={{ padding: '12px', fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>${order.totalAmount.toFixed(2)}</td>
+                    <td style={{ padding: '12px', fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>₹{order.totalAmount.toFixed(2)}</td>
                     <td style={{ padding: '12px', fontSize: 12, color: 'var(--text-secondary)' }}>{order.items.length}</td>
                     <td style={{ padding: '12px' }}><OrderStatusBadge status={order.status} /></td>
                   </tr>

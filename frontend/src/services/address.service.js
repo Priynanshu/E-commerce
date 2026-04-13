@@ -1,3 +1,4 @@
+import api from "./api.service";
 
 const addAddressService = async (addressData) => {
     try {
@@ -12,25 +13,25 @@ const fetchAddressService = async () => {
     try {
         const response = await api.get("/address/get")
         return response.data
-    }catch(err) {
+    } catch (err) {
         throw err
     }
 }
 
 const updateAddressService = async ({id, addressData}) => {
     try {
-        const response = await api.get(`/address/${id}`, {addressData})
+        const response = await api.put(`/address/update/${id}`, addressData)
         return response.data
-    }catch(err) {
+    } catch (err) {
         throw err
     }
 }
 
 const deleteAddressService = async (id) => {
     try {
-        const response = await api.get(`/address/${id}`)
+        const response = await api.delete(`/address/delete/${id}`)
         return response.data
-    }catch(err) {
+    } catch (err) {
         throw err
     }
 }

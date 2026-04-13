@@ -6,10 +6,10 @@ let initialState = {
     user: null,
     allUsers: 0,
     isAuthenticated: false,
-    loading: false,
+    loading: true, // Initialized to true for session verification
+    userLoading: false, // Added separate loading for users list
     error: null,
 }
-
 export const registerSlice = createAsyncThunk(
   "auth/register",
   async (userData, thunkAPI) => {
@@ -77,6 +77,9 @@ const authSlice = createSlice({
     clearAuthError: (state) => {
       state.error = null;
     },
+    setLoading: (state, action) => {
+      state.loading = action.payload;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -87,12 +90,12 @@ const authSlice = createSlice({
     })
     .addCase(registerSlice.fulfilled, (state, action) => {
       state.loading = false;
-      state.user = action.payload.user || action.payload;
+      state.user = action.payload.user || action.payload?.data?.user || action.payload;
       state.isAuthenticated = true;
     })
     .addCase(registerSlice.rejected, (state, action) => {
       state.loading = false;
-      state.error = action.payload.message || "Registration failed";
+      state.error = action.payload?.message || "Registration failed";
     })
 
     //Login
@@ -107,7 +110,7 @@ const authSlice = createSlice({
     })
     .addCase(loginSlice.rejected, (state, action) => {
       state.loading = false
-      state.error = action.payload.message || "Login Failed"
+      state.error = action.payload?.message || "Login Failed"
     })
 
     //logout
@@ -122,7 +125,7 @@ const authSlice = createSlice({
     })
     .addCase(logoutSlice.rejected, (state, action) => {
       state.loading = false
-      state.error = action.payload.message || "Logout Failed"
+      state.error = action.payload?.message || "Logout Failed"
     })
 
     //getME
@@ -132,34 +135,32 @@ const authSlice = createSlice({
     })
     .addCase(getMeSlice.fulfilled, (state, action) => {
       state.loading = false
-      state.user = action.payload.user;
+      state.user = action.payload.user || action.payload.data?.user || action.payload;
       state.isAuthenticated = true;
       state.error = null
     })
     .addCase(getMeSlice.rejected, (state, action) => {
       state.loading = false
       state.isAuthenticated = false;
-      state.error = action.payload.message || "Get Profile Failed"
+      // Don't set error on session verification fail, it's normal if not logged in
     })
 
     //getAllUsers
     .addCase(getAllUsersSlice.pending, (state) => {
-      state.loading = true
+      state.userLoading = true
       state.error = null
     })
     .addCase(getAllUsersSlice.fulfilled, (state, action) => {
-      state.loading = false
-      state.allUsers = action.payload.totalUsers || action.payload;
+      state.userLoading = false
+      state.allUsers = action.payload.totalUsers || action.payload.count || action.payload || 0;
       state.error = null
     })
     .addCase(getAllUsersSlice.rejected, (state, action) => {
-      state.loading = false
-      state.isAuthenticated = false;
-      state.allUsers = 0;
-      state.error = action.payload.message || "Get All Users Failed"
+      state.userLoading = false
+      state.error = action.payload?.message || "Get All Users Failed"
     })
   }
 })
 
-export const { clearAuthError } = authSlice.actions
+export const { clearAuthError, setLoading } = authSlice.actions
 export default authSlice.reducer

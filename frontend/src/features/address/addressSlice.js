@@ -4,10 +4,10 @@ import addressService from "../../services/address.service"
 const initialState = {
   addresses: [],
   address: null,
-  addressLoading: null,
+  selectedAddressId: null, // Track selected address for checkout
+  addressLoading: false,
   error: null
 }
-
 export const addAddressSlice = createAsyncThunk(
   "address/add",
   async (addressData, thunkAPI) => {
@@ -15,7 +15,7 @@ export const addAddressSlice = createAsyncThunk(
       const response = await addressService.addAddressService(addressData)
     return response
     }catch(err) {
-      return thunkAPI.rejectWithValue(response?.data?.message || "something went wrong")
+      return thunkAPI.rejectWithValue(err.response?.data?.message || "something went wrong")
     }
   }
 )
@@ -27,7 +27,7 @@ export const getAddressSlice = createAsyncThunk(
       const response = await addressService.fetchAddressService()
     return response
     }catch(err) {
-      return thunkAPI.rejectWithValue(response?.data?.message || "something went wrong")
+      return thunkAPI.rejectWithValue(err.response?.data?.message || "something went wrong")
     }
   }
 )
@@ -39,7 +39,7 @@ export const updateAddressSlice = createAsyncThunk(
       const response = await addressService.updateAddressService({id, addressData})
     return response
     }catch(err) {
-      return thunkAPI.rejectWithValue(response?.data?.message || "something went wrong")
+      return thunkAPI.rejectWithValue(err.response?.data?.message || "something went wrong")
     }
   }
 )
@@ -51,7 +51,7 @@ export const deleteAddressSlice = createAsyncThunk(
       const response = await addressService.deleteAddressService(id)
     return response
     }catch(err) {
-      return thunkAPI.rejectWithValue(response?.data?.message || "something went wrong")
+      return thunkAPI.rejectWithValue(err.response?.data?.message || "something went wrong")
     }
   }
 )
@@ -63,6 +63,9 @@ const addressSlice = createSlice({
     clearAddressError: (state) => {
       state.error = null
     },
+    selectAddress: (state, action) => {
+      state.selectedAddressId = action.payload
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -74,7 +77,10 @@ const addressSlice = createSlice({
     })
     .addCase(addAddressSlice.fulfilled, (state, action) => {
       state.addressLoading = false
-      state.address = action.payload.data || action.payload
+      const newAddr = action.payload.data || action.payload
+      state.address = newAddr
+      state.addresses.push(newAddr)
+      state.selectedAddressId = newAddr._id
     })
     .addCase(addAddressSlice.rejected, (state, action) => {
       state.addressLoading = false
@@ -89,6 +95,9 @@ const addressSlice = createSlice({
     .addCase(getAddressSlice.fulfilled, (state, action) => {
       state.addressLoading = false
       state.addresses = action.payload.data || action.payload || []
+      if (state.addresses.length > 0 && !state.selectedAddressId) {
+        state.selectedAddressId = state.addresses[0]._id
+      }
     })
     .addCase(getAddressSlice.rejected, (state, action) => {
       state.addressLoading = false
@@ -102,7 +111,9 @@ const addressSlice = createSlice({
     })
     .addCase(updateAddressSlice.fulfilled, (state, action) => {
       state.addressLoading = false
-      state.address = action.payload.data || action.payload
+      const updated = action.payload.data || action.payload
+      state.address = updated
+      state.addresses = state.addresses.map(a => a._id === updated._id ? updated : a)
     })
     .addCase(updateAddressSlice.rejected, (state, action) => {
       state.addressLoading = false
@@ -116,7 +127,11 @@ const addressSlice = createSlice({
     })
     .addCase(deleteAddressSlice.fulfilled, (state, action) => {
       state.addressLoading = false
-      state.addresses = state.addresses.filter((a) => a._id !== action.payload.id);
+      const deletedId = action.meta.arg
+      state.addresses = state.addresses.filter((a) => a._id !== deletedId);
+      if (state.selectedAddressId === deletedId) {
+        state.selectedAddressId = state.addresses[0]?._id || null
+      }
     })
     .addCase(deleteAddressSlice.rejected, (state, action) => {
       state.addressLoading = false
@@ -125,5 +140,5 @@ const addressSlice = createSlice({
   }
 })
 
-export const {clearAddressError} = addressSlice.actions
+export const {clearAddressError, selectAddress} = addressSlice.actions
 export default addressSlice.reducer

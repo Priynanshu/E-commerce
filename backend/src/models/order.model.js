@@ -29,6 +29,18 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Address"
     },
+    paymentMethod: {
+        type: String,
+        required: true,
+        enum: ["card", "upi", "cod"],
+        default: "cod"
+    },
+    paymentStatus: {
+        type: String,
+        required: true,
+        enum: ["pending", "completed", "failed"],
+        default: "pending"
+    },
     status: {
         type: String,
         required: true,

@@ -103,9 +103,14 @@ const ProductDetail = () => {
             </div>
 
             <div style={{ display: 'flex', gap: 12, marginBottom: 24 }}>
+              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--border)', borderRadius: 12, padding: '4px' }}>
+                <button onClick={() => setQty(Math.max(1, qty - 1))} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}>-</button>
+                <span style={{ width: 40, textAlign: 'center', fontSize: 14, fontWeight: 600 }}>{qty}</span>
+                <button onClick={() => setQty(qty + 1)} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-primary)' }}>+</button>
+              </div>
               <button
                 disabled={product.stock <= 0}
-                onClick={() => addToCartHook({ ...product, quantity: qty })}
+                onClick={() => addToCartHook(product._id, qty)}
                 className="btn-primary"
                 style={{ flex: 1, padding: '14px', borderRadius: 12, opacity: product.stock <= 0 ? 0.5 : 1 }}
               >

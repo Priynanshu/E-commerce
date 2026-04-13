@@ -6,7 +6,11 @@ const cartModel = require("../models/cart.model"); // ✅ Cart model import karo
 const createOrder = async (req, res, next) => {
     try {
         const userId = req.user.userId;
-        const { items, address, fromCart } = req.body; // ✅ fromCart flag
+        const { items, address, fromCart, paymentMethod } = req.body; // ✅ added paymentMethod
+
+        if (!address) {
+            throw new AppError(400, "Address is required");
+        }
 
         let itemsToProcess = [];
 
@@ -24,10 +28,6 @@ const createOrder = async (req, res, next) => {
                 throw new AppError(400, "Items are required");
             }
             itemsToProcess = items;
-        }
-
-        if (!address) {
-            throw new AppError(400, "Address is required");
         }
 
         // Validate items & calculate total
@@ -58,6 +58,8 @@ const createOrder = async (req, res, next) => {
             items: validatedItems,
             totalAmount: totalPrice,
             address,
+            paymentMethod: paymentMethod || "cod", // added
+            paymentStatus: paymentMethod === "cod" ? "pending" : "completed", // added
             status: "pending",
         });
 

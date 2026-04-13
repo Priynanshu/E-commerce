@@ -33,30 +33,40 @@ const createProduct = async (req, res, next) => {
 
 const getProducts = async (req, res, next) => {
     try {
-       const products = await productModel.find().sort({ createdAt: -1 }).populate({
-        path: "reviews",
-        populate: { path: "user", select: "name" }
-       })
+        const { search, category, sort } = req.query;
+        let query = {};
 
-       if(!products) {
-        throw new AppError(404, "Products not found")
-       }
+        if (search) {
+            query.$or = [
+                { name: { $regex: search, $options: "i" } },
+                { description: { $regex: search, $options: "i" } }
+            ];
+        }
 
-       if(products.length === 0) {
+        if (category && category !== 'All') {
+            query.category = category;
+        }
+
+        let sortOption = { createdAt: -1 };
+        if (sort === 'price-asc') sortOption = { price: 1 };
+        if (sort === 'price-desc') sortOption = { price: -1 };
+        if (sort === 'rating') sortOption = { 'reviews.rating': -1 }; // Assuming rating exists in reviews
+
+        const products = await productModel.find(query)
+            .sort(sortOption)
+            .populate({
+                path: "reviews",
+                populate: { path: "user", select: "name" }
+            });
+
         return res.status(200).json({
             success: true,
-            message: "No products found"
-        })
-       }
-
-       return res.status(200).json({
-        success: true,
-        message: "Products fetched successfully",
-        count: products.length,
-        products
-       })
-    }catch(err) {
-        next(err)
+            message: "Products fetched successfully",
+            count: products.length,
+            products
+        });
+    } catch (err) {
+        next(err);
     }
 }
 

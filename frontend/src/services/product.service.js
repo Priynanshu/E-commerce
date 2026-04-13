@@ -1,8 +1,8 @@
 import api from "./api.service"
 
-const fetchAllProductsService = async () => {
+const fetchAllProductsService = async (params = {}) => {
     try {
-        const response = await api.get("/products/all");
+        const response = await api.get("/products/all", { params });
         return response.data; // Thunk ko ab response.data.products milega
     } catch (err) {
         throw err;

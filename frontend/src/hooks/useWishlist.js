@@ -6,21 +6,21 @@ const useWishlist = () => {
     const dispatch = useDispatch()
     const { wishlistProducts, wishlistLoading, error, wishlistCount } = useSelector((state) => state.wishlist)
 
-    const addToWishlistHook = async (productId) => {
+    const addToWishlistHook = useCallback(async (productId) => {
         try {
             return await dispatch(addToWishlistSlice(productId))
         } catch (err) {
             throw err
         }  
-    }
+    }, [dispatch])
 
-    const removeFromWishlistHook = async (productId) => {
+    const removeFromWishlistHook = useCallback(async (productId) => {
         try {
             return await dispatch(removeFromWishlistSlice(productId))
         } catch (err) {
             throw err
         }  
-    }
+    }, [dispatch])
 
     const getWishlistHook = useCallback(async () => {
             await dispatch(getWishlistSlice());

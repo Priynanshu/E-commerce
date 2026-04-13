@@ -2,58 +2,41 @@ import React, { useMemo, useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import ProductCard from '../components/ui/ProductCard'
 import useProduct from '../hooks/useProduct'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 // Agar aapne filter ke liye Redux use kiya hai toh ye imports chahiye honge:
 // import { setCategory, setSearch, setSortBy } from '../features/filter/filterSlice'
 
 const Products = () => {
-  const { products, productLoading, error, fetchAllProductsHook, fetchProductByIdHook } = useProduct()
+  const { products, productLoading, error, fetchAllProductsHook } = useProduct()
+  const location = useLocation()
   
-  // Local State for Filters (Agar Redux use nahi kar rahe toh)
-  const [selectedCategory, setSelectedCategory] = useState('All')
-  const [searchQuery, setSearchQuery] = useState('')
+  // Helper to get query params
+  const queryParams = new URLSearchParams(location.search)
+  const initialCategory = queryParams.get('category') || 'All'
+  const initialSearch = queryParams.get('search') || ''
+  
+  // Local State for Filters
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory)
+  const [searchQuery, setSearchQuery] = useState(initialSearch)
   const [sortBy, setSortBy] = useState('default')
   
   useEffect(() => {
-    fetchAllProductsHook()
-  }, [fetchAllProductsHook])
+    const params = {}
+    if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory
+    if (searchQuery) params.search = searchQuery
+    if (sortBy && sortBy !== 'default') params.sort = sortBy
 
-  // Dynamic Categories list based on products
-  const categories = useMemo(() => {
-    const base = ['All', ...new Set(products.map(p => p.category))];
-    return base;
-  }, [products]);
+    const timer = setTimeout(() => {
+        fetchAllProductsHook(params)
+    }, 400)
 
-  // Filtering & Sorting Logic
-  const filtered = useMemo(() => {
-    let list = [...products]
+    return () => clearTimeout(timer)
+  }, [selectedCategory, searchQuery, sortBy, fetchAllProductsHook])
 
-    // 1. Category Filter
-    if (selectedCategory !== 'All') {
-      list = list.filter((p) => p.category === selectedCategory)
-    }
+  // Simple static list for categories (can be dynamic too)
+  const categories = ['All', 'Electronics', 'Clothing', 'Accessories', 'Home & Garden', 'Beauty']
 
-    // 2. Search Filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      list = list.filter((p) => 
-        p.name.toLowerCase().includes(query) || 
-        p.category.toLowerCase().includes(query)
-      )
-    }
-
-    // 3. Sorting
-    if (sortBy === 'price-asc') {
-      list.sort((a, b) => a.price - b.price)
-    } else if (sortBy === 'price-desc') {
-      list.sort((a, b) => b.price - a.price)
-    } else if (sortBy === 'rating') {
-      // Assuming rating field exists, default to 0
-      list.sort((a, b) => (b.rating || 0) - (a.rating || 0))
-    }
-
-    return list
-  }, [products, selectedCategory, searchQuery, sortBy])
+  const filtered = products 
 
   if (productLoading && products.length === 0) {
     return (

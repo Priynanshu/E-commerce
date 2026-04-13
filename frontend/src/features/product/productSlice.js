@@ -13,10 +13,9 @@ let initialState = {
 
 export const fetchAllProducts = createAsyncThunk(
   "products/fetchAll",
-  async (_, thunkAPI) => {
+  async (params, thunkAPI) => {
     try {
-      const response = await productService.fetchAllProductsService();
-      // Note: Agar service return response.data kar rahi hai toh seedha return response
+      const response = await productService.fetchAllProductsService(params);
       return response.data || response; 
     } catch (err) {
       return thunkAPI.rejectWithValue(err.response?.data?.message || "Something went wrong");

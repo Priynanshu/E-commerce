@@ -1,42 +1,42 @@
 import { useDispatch, useSelector } from "react-redux"
 import { addAddressSlice, clearAddressError, deleteAddressSlice, getAddressSlice, updateAddressSlice } from "../features/address/addressSlice"
-import { useEffect } from "react"
+import { useEffect, useCallback } from "react"
 
 const useAddress = () => {
     const dispatch = useDispatch()
-    const {address, addresses, addressLoading, error} = useSelector((state) => state.address)
+    const {address, addresses, addressLoading, selectedAddressId, error} = useSelector((state) => state.address)
 
-    const addAddressHook = async (addressData) => {
+    const addAddressHook = useCallback(async (addressData) => {
         try {
             return await dispatch(addAddressSlice(addressData))
         }catch(err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    const fetchAddressHook = async () => {
+    const fetchAddressHook = useCallback(async () => {
         try {
             return await dispatch(getAddressSlice())
         }catch(err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    const updateAddressHook = async (id, addressData) => {
+    const updateAddressHook = useCallback(async (id, addressData) => {
         try {
             return await dispatch(updateAddressSlice({id, addressData}))
         }catch(err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    const deleteAddressHook = async (id) => {
+    const deleteAddressHook = useCallback(async (id) => {
         try {
             return await dispatch(deleteAddressSlice(id))
         }catch(err) {
             throw err
         }
-    }
+    }, [dispatch])
 
     useEffect(() => {
         dispatch(clearAddressError())
@@ -50,6 +50,7 @@ const useAddress = () => {
         address,
         addresses,
         addressLoading,
+        selectedAddressId,
         error
     }
 }

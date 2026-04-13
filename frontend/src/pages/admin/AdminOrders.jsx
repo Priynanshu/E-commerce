@@ -36,16 +36,20 @@ const AdminOrders = () => {
                   <td style={{ padding: '14px', fontSize: 12, color: 'var(--text-muted)', fontFamily: 'monospace' }}>#{order._id.toUpperCase().slice(-8)}</td>
                   <td style={{ padding: '14px', fontSize: 12, color: 'var(--text-secondary)' }}>{new Date(order.createdAt).toLocaleDateString()}</td>
                   <td style={{ padding: '14px', fontSize: 12, color: 'var(--text-secondary)' }}>{order.items.length} item{order.items.length !== 1 ? 's' : ''}</td>
-                  <td style={{ padding: '14px', fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>${order.totalAmount.toFixed(2)}</td>
+                  <td style={{ padding: '14px', fontSize: 14, fontWeight: 700, color: 'var(--accent)' }}>₹{order.totalAmount.toFixed(2)}</td>
                   <td style={{ padding: '14px' }}><OrderStatusBadge status={order.status} /></td>
                   <td style={{ padding: '14px' }}>
-                    <select
-                      value={order.status}
-                      onChange={(e) => updateOrderStatusHook(order._id, e.target.value)}
-                      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', outline: 'none' }}
-                    >
-                      {statuses.map((s) => <option key={s} value={s} style={{ background: 'var(--bg-card)' }}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                    </select>
+                    {order.status === 'delivered' ? (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: 8, border: '1px solid var(--border)' }}>Not Changeable</span>
+                    ) : (
+                      <select
+                        value={order.status}
+                        onChange={(e) => updateOrderStatusHook(order._id, e.target.value)}
+                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: 8, padding: '6px 10px', fontSize: 12, cursor: 'pointer', outline: 'none' }}
+                      >
+                        {statuses.map((s) => <option key={s} value={s} style={{ background: 'var(--bg-card)' }}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                      </select>
+                    )}
                   </td>
                 </tr>
               ))}

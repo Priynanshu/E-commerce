@@ -1,62 +1,72 @@
 import { useDispatch, useSelector } from "react-redux"
-import { cancelOrderSlice, clearOrderError, createOrderSlice, fetchAllOrdersSlice, fetchMyOrdersSlice, fetchOrderByIdSlice, updateOrderStatusSlice } from "../features/order/orderSlice"
-import { useEffect } from "react"
+import { 
+    cancelOrderSlice, 
+    clearOrderError, 
+    createOrderSlice, 
+    fetchAllOrdersSlice, 
+    fetchMyOrdersSlice, 
+    fetchOrderByIdSlice, 
+    updateOrderStatusSlice 
+} from "../features/order/orderSlice"
+import { useEffect, useCallback } from "react"
 
 const useOrder = () => {
     const dispatch = useDispatch()
     const {order, orders, totalOrders, totalRevenue, orderLoading, error} = useSelector((state) => state.order)
 
-    const createOrderHook = async (orderData) => {
+    const createOrderHook = useCallback(async (orderData) => {
         try {
-           const result = await dispatch(createOrderSlice(orderData))
-           return result.payload
+           const result = await dispatch(createOrderSlice(orderData)).unwrap()
+           return result
         }catch(err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    const fetchAllOrdersHook = async () => {
+    const fetchAllOrdersHook = useCallback(async () => {
         try {
-            return await dispatch(fetchAllOrdersSlice())
+            return await dispatch(fetchAllOrdersSlice()).unwrap()
         } catch(err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    const fetchOrderByIdHook = async (id) => {
+    const fetchOrderByIdHook = useCallback(async (id) => {
         try {
-            return await dispatch(fetchOrderByIdSlice(id))
+            return await dispatch(fetchOrderByIdSlice(id)).unwrap()
         }catch(err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    const fetchMyOrdersHook = async () => {
+    const fetchMyOrdersHook = useCallback(async () => {
         try {
-            return await dispatch(fetchMyOrdersSlice())
+            return await dispatch(fetchMyOrdersSlice()).unwrap()
         }catch(err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    const cancelOrderHook = async (id) => {
+    const cancelOrderHook = useCallback(async (id) => {
         try {
-            return await dispatch(cancelOrderSlice(id))
+            return await dispatch(cancelOrderSlice(id)).unwrap()
         }catch(err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    const updateOrderStatusHook = async (orderId, status) => {
+    const updateOrderStatusHook = useCallback(async (orderId, status) => {
         try {
-            return await dispatch(updateOrderStatusSlice({orderId, status}))
+            return await dispatch(updateOrderStatusSlice({orderId, status})).unwrap()
         }catch(err) {
             throw err
         }
-    }
+    }, [dispatch])
 
     useEffect(() => {
-        dispatch(clearOrderError())
+        return () => {
+            dispatch(clearOrderError())
+        }
     }, [dispatch])
 
     return {
@@ -75,4 +85,4 @@ const useOrder = () => {
     }
 }
 
-export default useOrder
+export default useOrder

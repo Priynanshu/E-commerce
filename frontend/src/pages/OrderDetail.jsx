@@ -76,27 +76,37 @@ const OrderDetail = () => {
               <img src={item.product?.images?.[0] || 'https://via.placeholder.com/64'} alt="" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 10 }} />
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', marginBottom: 2 }}>{item.product?.name || 'Deleted Product'}</p>
-                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Qty: {item.quantity} × ${item.product?.price?.toFixed(2) || '0.00'}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Qty: {item.quantity} × ₹{item.product?.price?.toFixed(2) || '0.00'}</p>
               </div>
-              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent)' }}>${((item.product?.price || 0) * item.quantity).toFixed(2)}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--accent)' }}>₹{((item.product?.price || 0) * item.quantity).toFixed(2)}</span>
             </div>
           ))}
           <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: 14, fontSize: 18, fontWeight: 800 }}>
-            Total: <span style={{ color: 'var(--accent)', marginLeft: 10 }}>${order.totalAmount.toFixed(2)}</span>
+            Total: <span style={{ color: 'var(--accent)', marginLeft: 10 }}>₹{order.totalAmount.toFixed(2)}</span>
           </div>
         </div>
 
-        {/* Address */}
-        {order.address && (
-          <div className="glass-card" style={{ padding: '20px 24px', marginBottom: 20 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Delivery Address</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-              {order.address.street}<br />
-              {order.address.city}, {order.address.state} - {order.address.pinCode}<br />
-              📞 {order.address.phone}
-            </p>
+        {/* Address & Payment */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+          {order.address && (
+            <div className="glass-card" style={{ padding: '20px 24px' }}>
+              <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Delivery Address</h3>
+              <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                {order.address.street}<br />
+                {order.address.city}, {order.address.state} — {order.address.pinCode}<br />
+                📞 {order.address.phone}
+              </p>
+            </div>
+          )}
+          <div className="glass-card" style={{ padding: '20px 24px' }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Payment Method</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 18 }}>{order.paymentMethod === 'cod' ? '💵' : '💳'}</span>
+                <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{order.paymentMethod?.toUpperCase() || 'COD'}</p>
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>Status: {order.paymentStatus || 'Pending'}</p>
           </div>
-        )}
+        </div>
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 10 }}>

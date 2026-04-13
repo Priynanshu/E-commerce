@@ -8,60 +8,62 @@ import {
     updateProduct, 
     fetchProductById 
 } from "../features/product/productSlice"
-import { useEffect } from "react"
+import { useEffect, useCallback } from "react"
 
-const useProduct = (id = null) => { // Optional ID parameter add kiya
+const useProduct = (id = null) => { 
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
     const { products, product, productLoading, error, totalProducts } = useSelector((state) => state.product)
 
     // 1. Fetch All Products
-    const fetchAllProductsHook = async () => {
-        dispatch(fetchAllProducts())
-    }
+    const fetchAllProductsHook = useCallback(async (params = {}) => {
+        dispatch(fetchAllProducts(params))
+    }, [dispatch])
 
-    // 2. Fetch Single Product (FIXED: Added 'id' in dispatch)
-    const fetchProductByIdHook = async (productId) => {
+    // 2. Fetch Single Product
+    const fetchProductByIdHook = useCallback(async (productId) => {
         if (productId) {
             dispatch(fetchProductById(productId))
         }
-    }
+    }, [dispatch])
 
-    // 3. Auto-fetch logic (Agar hook ko ID di jaye toh khud fetch kare)
+    // 3. Auto-fetch logic
     useEffect(() => {
         if (id) {
             dispatch(fetchProductById(id))
         }
     }, [id, dispatch])
 
-    const createProductHook = async (productData) => {
+    const createProductHook = useCallback(async (productData) => {
         try {
-            return await dispatch(createProduct(productData)).unwrap() // unwrap() better error handling ke liye
+            return await dispatch(createProduct(productData)).unwrap()
         } catch (err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    const updateProductHook = async (id, productData) => {
+    const updateProductHook = useCallback(async (productId, productData) => {
         try {
-            return await dispatch(updateProduct({ id, productData })).unwrap()
+            return await dispatch(updateProduct({ id: productId, productData })).unwrap()
         } catch (err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    const deleteProductHook = async (id) => {
+    const deleteProductHook = useCallback(async (productId) => {
         try {
-            return await dispatch(deleteProduct(id)).unwrap()
+            return await dispatch(deleteProduct(productId)).unwrap()
         } catch (err) {
             throw err
         }
-    }
+    }, [dispatch])
 
-    // Clear errors on unmount or on initial load
+    // Clear errors on unmount
     useEffect(() => {
-        dispatch(clearProductError())
+        return () => {
+            dispatch(clearProductError())
+        }
     }, [dispatch])
 
     return {
@@ -78,4 +80,4 @@ const useProduct = (id = null) => { // Optional ID parameter add kiya
     }
 }
 
-export default useProduct
+export default useProduct

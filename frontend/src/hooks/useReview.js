@@ -6,13 +6,13 @@ const useReview = () => {
     const dispatch = useDispatch()
     const { reviews, reviewLoading, error } = useSelector((state) => state.review)
 
-    const createReviewHook = async (productId, reviewData) => {
+    const createReviewHook = useCallback(async (productId, reviewData) => {
         try {
             return await dispatch(createReviewSlice({ productId, reviewData }))
         } catch (err) {
             throw err
         }
-    }
+    }, [dispatch])
 
     const getReviewHook = useCallback(async (productId) => {
         await dispatch(getReviewSlice(productId));
