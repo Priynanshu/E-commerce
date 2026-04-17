@@ -36,7 +36,7 @@ const Products = () => {
   useEffect(() => {
     const params = {
       page: currentPage,
-      limit: 4
+      limit: 9
     }
 
     if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory

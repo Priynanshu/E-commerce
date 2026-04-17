@@ -34,7 +34,7 @@ const createProduct = async (req, res, next) => {
 
 const getProducts = async (req, res, next) => {
     try {
-        const { search, category, sort, page = 1, limit = 4 } = req.query;
+        const { search, category, sort, page = 1, limit = 9 } = req.query;
         let query = {};
 
         if (search) {

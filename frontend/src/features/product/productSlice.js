@@ -9,7 +9,7 @@ let initialState = {
     totalProducts: 0,
     totalPages: 1,
     currentPage: 1,
-    limit: 4
+    limit: 9
   },
   productLoading: false,
   error: null,
@@ -104,7 +104,7 @@ const productSlice = createSlice({
           totalProducts: action.payload.count || 0,
           totalPages: 1,
           currentPage: 1,
-          limit: 4
+          limit: 9
         };
         state.totalProducts = action.payload.count || 0;
       })
