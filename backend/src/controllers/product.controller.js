@@ -1,5 +1,6 @@
 const productModel = require("../models/product.model")
 const AppError = require("../utils/ApiError.utils")
+const { clearProductCache } = require("../utils/cacheInvalidation.utils")
 
 
 const createProduct = async (req, res, next) => {
@@ -33,7 +34,7 @@ const createProduct = async (req, res, next) => {
 
 const getProducts = async (req, res, next) => {
     try {
-        const { search, category, sort } = req.query;
+        const { search, category, sort, page = 1, limit = 4 } = req.query;
         let query = {};
 
         if (search) {
@@ -50,10 +51,20 @@ const getProducts = async (req, res, next) => {
         let sortOption = { createdAt: -1 };
         if (sort === 'price-asc') sortOption = { price: 1 };
         if (sort === 'price-desc') sortOption = { price: -1 };
-        if (sort === 'rating') sortOption = { 'reviews.rating': -1 }; // Assuming rating exists in reviews
+        if (sort === 'rating') sortOption = { 'reviews.rating': -1 };
+
+        // Pagination Logic
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        const skip = (pageNum - 1) * limitNum;
+
+        const totalProducts = await productModel.countDocuments(query);
+        const totalPages = Math.ceil(totalProducts / limitNum);
 
         const products = await productModel.find(query)
             .sort(sortOption)
+            .skip(skip)
+            .limit(limitNum)
             .populate({
                 path: "reviews",
                 populate: { path: "user", select: "name" }
@@ -62,8 +73,14 @@ const getProducts = async (req, res, next) => {
         return res.status(200).json({
             success: true,
             message: "Products fetched successfully",
-            count: products.length,
-            products
+            count: totalProducts,
+            products,
+            pagination: {
+                totalProducts,
+                totalPages,
+                currentPage: pageNum,
+                limit: limitNum
+            }
         });
     } catch (err) {
         next(err);
@@ -96,6 +113,8 @@ const updateProducts = async (req, res, next) => {
     try {
         const {id} = req.params
         const {name, description, category, stock, price, images} = req.body
+
+        await clearProductCache(id)
         const product = await productModel.findByIdAndUpdate(id, {
             name,
             description,
@@ -126,6 +145,9 @@ const deleteProduct = async (req, res, next) => {
         if(!product) {
             throw new AppError(404, "Product not found")
         }
+
+        await clearProductCache(id)
+        
         return res.status(200).json({
             success: true,
             message: "Product deleted successfully",

@@ -5,6 +5,12 @@ let initialState = {
   products: [],
   product: null,
   totalProducts: 0,
+  pagination: {
+    totalProducts: 0,
+    totalPages: 1,
+    currentPage: 1,
+    limit: 4
+  },
   productLoading: false,
   error: null,
 };
@@ -93,9 +99,14 @@ const productSlice = createSlice({
       })
       .addCase(fetchAllProducts.fulfilled, (state, action) => {
         state.productLoading = false;
-        // Backend se agar { products: [] } aa raha hai toh action.payload.products
-        state.products = action.payload.products || action.payload;
-        state.totalProducts = action.payload.count || action.payload.length || 0;
+        state.products = action.payload.products || [];
+        state.pagination = action.payload.pagination || {
+          totalProducts: action.payload.count || 0,
+          totalPages: 1,
+          currentPage: 1,
+          limit: 4
+        };
+        state.totalProducts = action.payload.count || 0;
       })
       .addCase(fetchAllProducts.rejected, (state, action) => {
         state.productLoading = false;

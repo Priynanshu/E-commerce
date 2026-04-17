@@ -14,7 +14,7 @@ const useProduct = (id = null) => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
-    const { products, product, productLoading, error, totalProducts } = useSelector((state) => state.product)
+    const { products, product, productLoading, error, totalProducts, pagination } = useSelector((state) => state.product)
 
     // 1. Fetch All Products
     const fetchAllProductsHook = useCallback(async (params = {}) => {
@@ -75,6 +75,7 @@ const useProduct = (id = null) => {
         products,
         product,
         totalProducts,
+        pagination,
         productLoading,
         error
     }

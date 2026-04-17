@@ -10,8 +10,14 @@ const cartRoutes = require("./routes/cart.routes")
 const paymentRoutes = require("./routes/payment.routes")
 const cookie = require("cookie-parser")
 const cors = require("cors")
+const compression = require("compression")
+const morgan = require("morgan")
+const helmet = require("helmet");
 
 const app = express();
+
+app.use(morgan("dev"));
+app.use(helmet());  
 
 app.use(cors({
     origin: "http://localhost:5173",
@@ -21,6 +27,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookie())
+app.use(compression())
 
 app.use("/api/auth", authRoutes)
 app.use("/api/products", productRoutes)

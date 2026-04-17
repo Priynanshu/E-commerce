@@ -3,11 +3,9 @@ import { useSelector, useDispatch } from 'react-redux'
 import ProductCard from '../components/ui/ProductCard'
 import useProduct from '../hooks/useProduct'
 import { useNavigate, useLocation } from 'react-router-dom'
-// Agar aapne filter ke liye Redux use kiya hai toh ye imports chahiye honge:
-// import { setCategory, setSearch, setSortBy } from '../features/filter/filterSlice'
 
 const Products = () => {
-  const { products, productLoading, error, fetchAllProductsHook } = useProduct()
+  const { products, productLoading, error, fetchAllProductsHook, pagination } = useProduct()
   const location = useLocation()
   
   // Helper to get query params
@@ -18,25 +16,50 @@ const Products = () => {
   // Local State for Filters
   const [selectedCategory, setSelectedCategory] = useState(initialCategory)
   const [searchQuery, setSearchQuery] = useState(initialSearch)
+  const [debounceQuery, setDebounceQuery] = useState("")
   const [sortBy, setSortBy] = useState('default')
-  
-  useEffect(() => {
-    const params = {}
-    if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory
-    if (searchQuery) params.search = searchQuery
-    if (sortBy && sortBy !== 'default') params.sort = sortBy
+  const [currentPage, setCurrentPage] = useState(1)
 
+  useEffect(() => {
     const timer = setTimeout(() => {
-        fetchAllProductsHook(params)
-    }, 400)
+        setDebounceQuery(searchQuery)
+    }, 500)
 
     return () => clearTimeout(timer)
-  }, [selectedCategory, searchQuery, sortBy, fetchAllProductsHook])
+}, [searchQuery])
+
+  // Reset to page 1 when filters or search change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedCategory, debounceQuery, sortBy])
+  
+  useEffect(() => {
+    const params = {
+      page: currentPage,
+      limit: 4
+    }
+
+    if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory
+    if (debounceQuery) params.search = debounceQuery
+    if (sortBy && sortBy !== 'default') params.sort = sortBy
+
+    fetchAllProductsHook(params)
+
+    // Smooth scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+
+}, [selectedCategory, debounceQuery, sortBy, currentPage, fetchAllProductsHook])
 
   // Simple static list for categories (can be dynamic too)
   const categories = ['All', 'Electronics', 'Clothing', 'Accessories', 'Home & Garden', 'Beauty']
 
   const filtered = products 
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   if (productLoading && products.length === 0) {
     return (
@@ -55,7 +78,7 @@ const Products = () => {
             All <span className="gradient-text">Products</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>
-            {filtered.length} products found{selectedCategory !== 'All' ? ` in "${selectedCategory}"` : ''}
+            {pagination?.totalProducts || 0} products found{selectedCategory !== 'All' ? ` in "${selectedCategory}"` : ''}
           </p>
         </div>
       </div>
@@ -111,7 +134,7 @@ const Products = () => {
         </aside>
 
         {/* Product Grid Section */}
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           {/* Search Bar */}
           <div style={{ position: 'relative', marginBottom: 24 }}>
             <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', display: 'flex' }}>
@@ -142,9 +165,72 @@ const Products = () => {
               >Clear all filters</button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 24 }}>
-              {filtered.map((p) => <ProductCard key={p._id}  product={p} />)}
-            </div>
+            <>
+              <div 
+                key={currentPage} // Trigger re-animation on page change
+                className="product-grid"
+                style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', 
+                  gap: 24,
+                  flex: 1,
+                  animation: 'fadeIn 0.5s ease-out forwards'
+                }}
+              >
+                {filtered.map((p) => <ProductCard key={p._id} product={p} />)}
+              </div>
+
+              {/* Pagination UI */}
+              {pagination.totalPages > 1 && (
+                <div style={{ 
+                  marginTop: 40, 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  gap: 8,
+                  background: 'var(--bg-secondary)',
+                  padding: '12px 20px',
+                  borderRadius: 16,
+                  alignSelf: 'center',
+                  border: '1px solid var(--border)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+                }}>
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    className="pagination-btn"
+                    style={{ opacity: currentPage === 1 ? 0.3 : 1 }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                  </button>
+
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {[...Array(pagination.totalPages)].map((_, i) => (
+                      <button
+                        key={i + 1}
+                        onClick={() => handlePageChange(i + 1)}
+                        className={`pagination-number ${currentPage === i + 1 ? 'active' : ''}`}
+                      >
+                        {i + 1}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    disabled={currentPage === pagination.totalPages}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    className="pagination-btn"
+                    style={{ opacity: currentPage === pagination.totalPages ? 0.3 : 1 }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -152,6 +238,61 @@ const Products = () => {
       <style>{`
         .gradient-text { background: linear-gradient(135deg, #6c63ff, #ff6584); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         @media (max-width: 900px) { aside { display: none !important; } }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .pagination-btn {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          border: 1px solid var(--border);
+          background: var(--bg-primary);
+          color: var(--text-primary);
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+          background: var(--accent);
+          color: white;
+          border-color: var(--accent);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+        }
+
+        .pagination-number {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          border: 1px solid transparent;
+          background: transparent;
+          color: var(--text-secondary);
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 14px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .pagination-number:hover:not(.active) {
+          background: rgba(108, 99, 255, 0.1);
+          color: var(--accent);
+        }
+
+        .pagination-number.active {
+          background: var(--accent);
+          color: white;
+          transform: scale(1.05);
+          box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
+        }
       `}</style>
     </div>
   )

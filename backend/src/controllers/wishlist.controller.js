@@ -2,11 +2,12 @@ const productModel = require("../models/product.model");
 const userModel = require("../models/user.model");
 const wishlistModel = require("../models/wishlist.model");
 const AppError = require("../utils/ApiError.utils");
+const { clearWishlistCache } = require("../utils/cacheInvalidation.utils");
 
 const addToWishlist = async (req, res, next) => {
     try {
         const userId = req.user.userId;
-        const { productId } = req.params;
+        const productId = req.params.productId;
 
         const product = await productModel.findById(productId);
         if (!product) {
@@ -14,7 +15,7 @@ const addToWishlist = async (req, res, next) => {
         }
         
         let wishlist = await wishlistModel.findOne({ user: userId });
-        
+         
         if (!wishlist) {
             wishlist = await wishlistModel.create({ user: userId, products: [productId] });
         } else {
@@ -36,6 +37,7 @@ const addToWishlist = async (req, res, next) => {
             count: wishlist.products.length
         });
     } catch(err) {
+        console.log(err)
         next(err);
     }
 }
@@ -71,6 +73,9 @@ const removeFromWishlist = async (req, res, next) => {
         if (!wishlist) {
             throw new AppError("Wishlist not found", 404);
         }
+
+        await clearWishlistCache(productId)
+        
         const productIndex = wishlist.products.findIndex(id => id.toString() === productId);
         if (productIndex === -1) {
             throw new AppError("Product not in wishlist", 400);
